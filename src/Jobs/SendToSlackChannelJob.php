@@ -4,6 +4,7 @@ namespace Spatie\SlackAlerts\Jobs;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
@@ -22,7 +23,7 @@ class SendToSlackChannelJob implements ShouldQueue
     public int $maxExceptions = 3;
 
     public function __construct(
-        public string $text,
+        public string|Arrayable $text,
         public string $type,
         public string $webhookUrl
     ) {
@@ -30,7 +31,29 @@ class SendToSlackChannelJob implements ShouldQueue
 
     public function handle(): void
     {
+        if (is_string($this->text)) {
+            $this->sendMessage();
+
+            return;
+        }
+
+        $this->sendBlock();
+    }
+
+    private function sendMessage(): void
+    {
         $payload = ['type' => $this->type, 'text' => $this->text];
+
+        Http::post($this->webhookUrl, $payload);
+    }
+
+    private function sendBlock(): void
+    {
+        $payload = [
+            'blocks' => [
+                $this->text->toArray()
+            ]
+        ];
 
         Http::post($this->webhookUrl, $payload);
     }

@@ -2,6 +2,8 @@
 
 namespace Spatie\SlackAlerts;
 
+use Spatie\SlackAlerts\ValueObjects\Section;
+
 class SlackAlert
 {
     protected string $webhookUrlName = 'default';
@@ -18,8 +20,23 @@ class SlackAlert
         $webhookUrl = Config::getWebhookUrl($this->webhookUrlName);
 
         $jobArguments = [
-            'text' => $text,
             'type' => 'mrkdown',
+            'text' => $text,
+            'webhookUrl' => $webhookUrl,
+        ];
+
+        $job = Config::getJob($jobArguments);
+
+        dispatch($job);
+    }
+
+    public function section(string $text): void
+    {
+        $webhookUrl = Config::getWebhookUrl($this->webhookUrlName);
+
+        $jobArguments = [
+            'type' => 'section',
+            'text' => Section::fromText($text),
             'webhookUrl' => $webhookUrl,
         ];
 
